@@ -59,6 +59,7 @@ js_match_style <- JS(
 
 # custom Searching method ====
 ## adapted from: https://glin.github.io/reactable/articles/custom-filtering.html#basic-custom-search-method
+## and from: https://stackoverflow.com/a/78691006/27514095
 regex_search_method <-  JS("function(rows, columnIds, searchValue) {
     return rows.filter(function(row) {
       return columnIds.some(function(columnId) {
@@ -69,8 +70,11 @@ regex_search_method <-  JS("function(rows, columnIds, searchValue) {
 
 # UI: Define UI for application =====
 ui <- page_navbar(
-  
+  tags$head(
+    tags$link(rel = "icon", type = "image/png", sizes = "32x32", href = "ox_brand1_rev.png")),
   id = "tabs",
+  fillable = TRUE,
+  fillable_mobile = TRUE,
   
   # Application title
   title = "Enggano-German Dictionary online",
@@ -84,6 +88,7 @@ ui <- page_navbar(
     bg = "#f9f8f5", 
     fg = "#002147", 
     primary = "#193658",
+    # primary = "#1D42A6",
     # secondary="#003947",
     secondary = "#E4F0EF",
     "link-hover-color" = "#be0f34",
@@ -92,7 +97,6 @@ ui <- page_navbar(
   ),
   # collapsible = TRUE,
   underline = TRUE,
-  
   nav_panel(title = "main",
             card(
               card_body(
@@ -127,7 +131,7 @@ ui <- page_navbar(
               # card for main entry output
               card(
                 
-                height = 400,
+                # height = 300,
                 #layout_sidebar(
                 #  sidebar = sidebar(
                     
@@ -151,7 +155,7 @@ ui <- page_navbar(
               
               # card for sub-entry output
               card(
-                height = 400,
+                # height = 300,
                 # layout_sidebar(
                   # sidebar = sidebar(
                     
@@ -194,7 +198,7 @@ server <- function(input, output, session) {
       showPagination = TRUE,
       highlight = TRUE,
       resizable = TRUE,
-      height = 520,
+      height = 495,
       minRows = 5,
       defaultPageSize = 100,
       elementId = "alphabet-select",
@@ -247,7 +251,7 @@ server <- function(input, output, session) {
                                        showPagination = TRUE,
                                        resizable = TRUE,
                                        highlight = TRUE,
-                                       height = 520,
+                                       height = 495,
                                        minRows = 5,
                                        defaultPageSize = 100,
                                        elementId = "alphabet-select",
