@@ -19,13 +19,61 @@ library(reactable)
 
 kahler <- DBI::dbConnect(RSQLite::SQLite(), "kahler.sqlite")
 
-# Define UI for application that draws a histogram
+# column filtering method ====
+## source: https://github.com/rjake/one-off-projects/blob/main/R/posit-table-contest-2022/posit-table-contest-2022.qmd
+
+# each fragment is searched for separately with match size >= # of fragments
+# size > length happens when something like city(_id)? returns two positive matches
+js_filter <-  JS(
+  "function(rows, columnId, filterValue) {
+      // rows = [{'table': 1, 'field': 'city'}, {'table': 2, 'field': 'city city_id'}] 
+      // columnId = 'field'
+      // filterValue = 'city(_id)?'
+      try {
+        const pattern = filterValue.split(' ')
+        const find = RegExp(`(${pattern.join('|')})+`, 'gi')
+        return rows.filter(
+          row => new Set(row.values[columnId].match(find)).size >= pattern.length
+        )
+      } catch(e) {
+          return rows
+      }
+       
+  }"
+)
+
+# highlight all fragment occurrences string matches
+js_match_style <- JS(
+  "function(cellInfo) {
+    try {
+      let filterValue = cellInfo.filterValue
+      let pattern = filterValue.split(' ').filter(n => n).sort().join('|')
+      let regexPattern = new RegExp('(' + pattern + ')', 'gi')
+      let replacement = '<span style=\"color:#be0f34;font-weight:bold;\">$1</span>'
+      return cellInfo.value.replace(regexPattern, replacement)
+    } catch(e) {
+        return cellInfo.value
+    }
+  }"
+)
+
+# custom Searching method ====
+## adapted from: https://glin.github.io/reactable/articles/custom-filtering.html#basic-custom-search-method
+regex_search_method <-  JS("function(rows, columnIds, searchValue) {
+    return rows.filter(function(row) {
+      return columnIds.some(function(columnId) {
+        return new RegExp(searchValue, 'gi').test(row.values[columnId])
+      })
+    })
+  }")
+
+# UI: Define UI for application =====
 ui <- page_navbar(
   
   id = "tabs",
   
   # Application title
-  title = "Retro-digitised Enggano-German dictionary",
+  title = "Enggano-German Dictionary online",
   
   # include your js script
   # tags$head(includeScript("returnClick.js")),
@@ -52,7 +100,7 @@ ui <- page_navbar(
                             img(src = "file-lingphil.png", align = "left", width = 80, style = "margin-right: 5px; margin-top: 10px", display = "inline-block"),
                             img(src = "file-ahrc.png", align = "left", width = 280, style = "margin-right: 5px; margin-top: 10px", display = "inline-block")),
                 tags$figcaption(em(a("This research", href="https://enggano.ling-phil.ox.ac.uk", target="_blank"), "is funded by the Arts and Humanities Research Council (AHRC) Grant ID ", a("AH/S011064/1", href="https://gtr.ukri.org/projects?ref=AH%2FS011064%2F1", target="_blank"), " and ", a("AH/W007290/1", href="https://gtr.ukri.org/projects?ref=AH%2FW007290%2F1", target="_blank"), ".")),
-                HTML('<p xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/"><a property="dct:title" rel="cc:attributionURL" href="https://doi.org/10.25446/oxford.28057742">Retro-digitised Enggano-German dictionary derived from Kähler’s (1987) “Enggano-Deutsches Wörterbuch”</a> by <span property="cc:attributionName">Gede Primahadi Wijaya Rajeg, Cokorda Rai Adi Pramartha, Ida Bagus Gede Sarasvananda, Putu Wahyu Widiatmika, Ida Bagus Made Ari Segara, Yul Fulgensia Rusman Pita, Fitri Koemba, I Gede Semara Dharma Putra, Putu Dea Indah Kartini, Ni Putu Wulan Lestari, and Barnaby Burleigh</span> is licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">CC BY-NC-SA 4.0<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1" alt=""></a></p>'),
+                HTML('<p xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/"><a property="dct:title" rel="cc:attributionURL" href="https://doi.org/10.25446/oxford.28057742">Enggano-German Dictionary online derived from Kähler’s (1987) “Enggano-Deutsches Wörterbuch”</a> by <span property="cc:attributionName">Gede Primahadi Wijaya Rajeg, Cokorda Rai Adi Pramartha, Ida Bagus Gede Sarasvananda, Putu Wahyu Widiatmika, Ida Bagus Made Ari Segara, Yul Fulgensia Rusman Pita, Fitri Koemba, I Gede Semara Dharma Putra, Putu Dea Indah Kartini, Ni Putu Wulan Lestari, and Barnaby Burleigh</span> is licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">CC BY-NC-SA 4.0<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1" alt=""></a></p>'),
                 h2("Overview"),
                 div(p("Welcome to the ", a("Shiny", href = "https://shiny.posit.co/", target = "_blank"), "web application serving the selected data from the retro-digitised Enggano-German dictionary ", a("(Rajeg et al. 2024)", href = "https://doi.org/10.25446/oxford.28057742.v1", target = "_blank"), "by ", a("Hans Kähler (1987).", href = "https://search.worldcat.org/title/18191699", target = "_blank"), "At the moment, users can browse the", actionLink("headword", "headword"), "represented in the original dictionary or the", actionLink("subentry", "sub-entry"), "for a given headword (if any). In the ", em("sub-entry"), "panel, information about the headword or root of the sub-entry is provided. The German, English, and Indonesian translations for the sub-entries are marked with '(sub)' in the column names.")),
                 
@@ -79,7 +127,7 @@ ui <- page_navbar(
               # card for main entry output
               card(
                 
-                # height = 400,
+                height = 400,
                 #layout_sidebar(
                 #  sidebar = sidebar(
                     
@@ -103,7 +151,7 @@ ui <- page_navbar(
               
               # card for sub-entry output
               card(
-                # height = 400,
+                height = 400,
                 # layout_sidebar(
                   # sidebar = sidebar(
                     
@@ -116,24 +164,20 @@ ui <- page_navbar(
 
 )
 
-# Define server logic required to draw a histogram
+# SERVER: Define server logic required =====
 server <- function(input, output, session) {
     
     k_full <- tbl(kahler, "full")
-    # k_stem_out <- dbGetQuery(kahler, "SELECT * FROM stem WHERE (stem_form LIKE '%$textInput$SearchEntry%') OR (stem_EN LIKE '%textInput$SearchEntry%') OR (stem_IDN LIKE '%textInput$SearchEntry%') OR (stem_DE LIKE '%textInput$SearchEntry%')") |> 
-    #   collect()
+    
     k_stem <- k_full |> 
       select(matches("^stem|kms_page|kms_Alphabet"))
     
     k_subentry <- k_full |> 
-      select(matches("^ex|stem_form$|stem_homonymID$|stem_ID|stem_(DE|EN|IDN)|kms_page|kms_Alphabet"), -matches("tokenised")) |> 
+      select(matches("^ex|stem_form|stem_homonymID$|stem_ID|stem_(DE|EN|IDN)|kms_page|kms_Alphabet")) |> 
       filter(!is.na(example_id))
     
-    # k_stem_out <- k_stem |> 
-    #   select(-stem_id, -stem_form_comm_untokenised, -stem_form_comm_tokenised, -matches("tokenised")) |> 
-    #   collect()
     k_stem_out <- k_stem |> 
-      select(entry = kms_Alphabet, page = kms_page, stem_id, form = stem_form, stem_homonymID, German = stem_DE, English = stem_EN, Indonesian = stem_IDN) |> 
+      select(entry = kms_Alphabet, page = kms_page, stem_id, form = stem_form_comm_untokenised, stem_homonymID, German = stem_DE, English = stem_EN, Indonesian = stem_IDN) |> 
       mutate(form = if_else(!is.na(stem_homonymID),
                             paste(form, "<sup><i>", stem_homonymID, "</i></sup>", sep = ""),
                             form),
@@ -146,25 +190,46 @@ server <- function(input, output, session) {
     k_stem_out <- reactable::reactable(k_stem_out,
       filterable = TRUE,
       searchable = TRUE,
+      searchMethod = regex_search_method,
       showPagination = TRUE,
       highlight = TRUE,
       resizable = TRUE,
       height = 520,
       minRows = 5,
       defaultPageSize = 100,
+      elementId = "alphabet-select",
       columns = list(
-        entry = reactable::colDef(show = TRUE, maxWidth = 80),
-        form = reactable::colDef(html = TRUE, maxWidth = 185),
+        entry = reactable::colDef(show = TRUE, maxWidth = 80,
+                                  filterInput = function(values, name) {
+                                    tags$select(
+                                      # Set to undefined to clear the filter
+                                      onchange = sprintf("Reactable.setFilter('alphabet-select', '%s', event.target.value || undefined)", name),
+                                      # "All" has an empty value to clear the filter, and is the default option
+                                      tags$option(value = "", "All"),
+                                      lapply(unique(values), tags$option),
+                                      "aria-label" = sprintf("Filter %s", name),
+                                      style = "width: 100%; height: 28px;"
+                                    )
+                                  }),
+        form = reactable::colDef(html = TRUE, maxWidth = 185,
+                                 filterMethod = js_filter,
+                                 cell = js_match_style),
+        German = reactable::colDef(html = TRUE,filterMethod = js_filter,
+                                   cell = js_match_style),
+        English = reactable::colDef(html = TRUE, filterMethod = js_filter,
+                                   cell = js_match_style),
+        Indonesian = reactable::colDef(html = TRUE, filterMethod = js_filter,
+                                   cell = js_match_style),
         stem_id = reactable::colDef(show = FALSE),
         page = reactable::colDef(show = FALSE)
       )
     )
     
     k_subentry_out <- k_subentry |> 
-      select(entry = kms_Alphabet, page = kms_page, stem_id, subentry = example_form, `German (sub)` = ex_DE,
+      select(entry = kms_Alphabet, page = kms_page, stem_id, form = example_form_comm_untokenised, `German (sub)` = ex_DE,
              `English (sub)` = ex_EN,
              `Indonesian (sub)` = ex_IDN,
-             `headword/root` = stem_form, stem_homonymID, German = stem_DE, English = stem_EN, Indonesian = stem_IDN) |> 
+             `headword/root` = stem_form_comm_untokenised, stem_homonymID, German = stem_DE, English = stem_EN, Indonesian = stem_IDN) |> 
       mutate(`headword/root` = if_else(!is.na(stem_homonymID),
                             paste(`headword/root`, "<sup><i>", stem_homonymID, "</i></sup>", sep = ""),
                             `headword/root`),
@@ -178,15 +243,46 @@ server <- function(input, output, session) {
     k_subentry_out <- reactable::reactable(k_subentry_out,
                                        filterable = TRUE,
                                        searchable = TRUE,
+                                       searchMethod = regex_search_method,
                                        showPagination = TRUE,
                                        resizable = TRUE,
                                        highlight = TRUE,
                                        height = 520,
                                        minRows = 5,
                                        defaultPageSize = 100,
+                                       elementId = "alphabet-select",
                                        columns = list(
-                                         entry = reactable::colDef(show = TRUE, maxWidth = 80),
-                                         `headword/root` = reactable::colDef(html = TRUE),
+                                         entry = reactable::colDef(show = TRUE, maxWidth = 80,
+                                                                   filterInput = function(values, name) {
+                                                                     tags$select(
+                                                                       # Set to undefined to clear the filter
+                                                                       onchange = sprintf("Reactable.setFilter('alphabet-select', '%s', event.target.value || undefined)", name),
+                                                                       # "All" has an empty value to clear the filter, and is the default option
+                                                                       tags$option(value = "", "All"),
+                                                                       lapply(unique(values), tags$option),
+                                                                       "aria-label" = sprintf("Filter %s", name),
+                                                                       style = "width: 100%; height: 28px;"
+                                                                     )
+                                                                   }),
+                                         `headword/root` = reactable::colDef(html = TRUE,
+                                                                             filterMethod = js_filter,
+                                                                             cell = js_match_style),
+                                         form = reactable::colDef(html = TRUE,
+                                                                             filterMethod = js_filter,
+                                                                             cell = js_match_style),
+                                         German = reactable::colDef(html = TRUE, filterMethod = js_filter,
+                                                                    cell = js_match_style),
+                                         English = reactable::colDef(html = TRUE, filterMethod = js_filter,
+                                                                     cell = js_match_style),
+                                         Indonesian = reactable::colDef(html = TRUE, filterMethod = js_filter,
+                                                                        cell = js_match_style),
+                                         `German (sub)` = reactable::colDef(html = TRUE, filterMethod = js_filter,
+                                                                    cell = js_match_style),
+                                         `English (sub)` = reactable::colDef(html = TRUE, filterMethod = js_filter,
+                                                                     cell = js_match_style),
+                                         `Indonesian (sub)` = reactable::colDef(html = TRUE,
+                                                                                filterMethod = js_filter,
+                                                                        cell = js_match_style),
                                          stem_id = reactable::colDef(show = FALSE),
                                          page = reactable::colDef(show = FALSE)
                                        )
