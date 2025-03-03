@@ -26,17 +26,17 @@ knitr::opts_chunk$set(
 
 ## How to cite
 
-Please cite the original source [@kähler1987] (if in APA7^th^) and the particular version of the digitised dictionary [@rajeg_kahler] (in [DataCite](https://support.datacite.org/docs/data-citation)) as follows:
+Please cite the original source [@kähler1987] (if in APA7^th^) and the particular version of the digitised dictionary dataset [@rajeg_kahler] (in [DataCite](https://support.datacite.org/docs/data-citation)) as follows:
 
 > Kähler, H. (with Schmidt, H.). (1987). _Enggano-Deutsches Wörterbuch_. Dietrich Reimer Verlag. https://search.worldcat.org/title/18191699
 
 > Rajeg, Gede Primahadi Wijaya; Pramartha, Cokorda Rai Adi; Sarasvananda, Ida Bagus Gede; Widiatmika, Putu Wahyu; Segara, Ida Bagus Made Ari; Pita, Yul Fulgensia Rusman; et al. (2024). Retro-digitised Enggano-German dictionary derived from Kähler’s (1987) “Enggano-Deutsches Wörterbuch”. University of Oxford. Dataset. https://doi.org/10.25446/oxford.28057742.v1
 
-For future updates and version of records, please check the [Releases](https://github.com/engganolang/kahler-1987-shiny/releases) page on this GitHub repository.
+For future updates, please check the [Releases](https://github.com/engganolang/kahler-1987-shiny/releases) page on this GitHub repository.
 
 ## Overview
 
-This repository hosts the source R codes for building the Shiny web application serving the retro-digitised[^1] Enggano-German Dictionary [@rajeg_kahler] by Hans Kähler [-@kähler1987].
+This repository hosts the source R codes for building [the Enggano-German Dictionary online web-application](https://enggano.shinyapps.io/enggano-german-dictionary/) serving the retro-digitised[^1] Enggano-German Dictionary dataset [@rajeg_kahler] by Hans Kähler [-@kähler1987].
 
 [^1]: News related to the transcription of the Enggano-German dictionary are published [here](https://www.ling-phil.ox.ac.uk/news/2023/05/28/retro-digitisation-work-enggano-german-dictionary-udayana-university-indonesia) and [here](https://sasing.unud.ac.id/posts/boel-students-involved-in-research-project-led-by-researchers-from-the-university-of-oxford-uk)
 

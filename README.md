@@ -38,7 +38,7 @@ BY-NC-SA 4.0
 
 Please cite the original source ([Kähler 1987](#ref-kähler1987)) (if in
 APA7<sup>th</sup>) and the particular version of the digitised
-dictionary ([Rajeg et al. 2024](#ref-rajeg_kahler)) (in
+dictionary dataset ([Rajeg et al. 2024](#ref-rajeg_kahler)) (in
 [DataCite](https://support.datacite.org/docs/data-citation)) as follows:
 
 > Kähler, H. (with Schmidt, H.). (1987). *Enggano-Deutsches Wörterbuch*.
@@ -51,14 +51,16 @@ dictionary ([Rajeg et al. 2024](#ref-rajeg_kahler)) (in
 > “Enggano-Deutsches Wörterbuch”. University of Oxford. Dataset.
 > <https://doi.org/10.25446/oxford.28057742.v1>
 
-For future updates and version of records, please check the
+For future updates, please check the
 [Releases](https://github.com/engganolang/kahler-1987-shiny/releases)
 page on this GitHub repository.
 
 ## Overview
 
-This repository hosts the source R codes for building the Shiny web
-application serving the retro-digitised[^1] Enggano-German Dictionary
+This repository hosts the source R codes for building [the
+Enggano-German Dictionary online
+web-application](https://enggano.shinyapps.io/enggano-german-dictionary/)
+serving the retro-digitised[^1] Enggano-German Dictionary dataset
 ([Rajeg et al. 2024](#ref-rajeg_kahler)) by Hans Kähler
 ([1987](#ref-kähler1987)).
 
