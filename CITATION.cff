@@ -3,10 +3,9 @@
 
 cff-version: 1.2.0
 title: >-
-  The Enggano-German Dictionary online derived from Kähler's (1987) “Enggano-Deutsches Wörterbuch”
+  R codes for the web application serving the dataset from "Retro-digitised Enggano-German dictionary derived from Kähler’s (1987) “Enggano-Deutsches Wörterbuch”"
 message: >-
-  Please cite this online publication if you use it for your research
-  or teaching
+  Please cite this software if you use it for your teaching and/or research
 type: software
 authors:
   - given-names: Gede Primahadi Wijaya
@@ -18,54 +17,9 @@ authors:
       (CIRHSS) & CompLexico Research Group, Udayana
       University
     orcid: 'https://orcid.org/0000-0002-2047-8621'
-  - given-names: Cokorda Rai Adi
-    family-names: Pramartha
-    affiliation: >-
-      Centre for Interdisciplinary Research on the
-      Humanities and Social Sciences (CIRHSS), Udayana
-      University
-    orcid: 'https://orcid.org/0000-0002-2835-3989'
-    email: cokorda@unud.ac.id
-  - given-names: Ida Bagus Gede
-    family-names: Sarasvananda
-    affiliation: Institut Bisnis dan Teknologi Indonesia (INSTIKI)
-    orcid: 'https://orcid.org/0000-0002-2020-5148'
-    email: sarasvananda@instiki.ac.id
-  - given-names: Putu Wahyu
-    family-names: Widiatmika
-    affiliation: Udayana University
-    email: wahyuw.9b@gmail.com
-  - given-names: Ida Bagus Made Ari
-    family-names: Segara
-    affiliation: Udayana University
-    email: segara.2280111003@student.unud.ac.id
-  - given-names: Yul Fulgensia Rusman
-    family-names: Pita
-    affiliation: Udayana University
-    email: pita.2280111019@student.unud.ac.id
-  - given-names: Fitriani Putri
-    family-names: Koemba
-    affiliation: Udayana University
-    email: koembafitri@gmail.com
-  - given-names: I Gede Semara Dharma
-    family-names: Putra
-    email: semaradharmaputra12@gmail.com
-    affiliation: Udayana University
-    orcid: 'https://orcid.org/0009-0000-6711-0878'
-  - given-names: Putu Dea Indah
-    family-names: Kartini
-    affiliation: Udayana University
-    email: deaindahk21@gmail.com
-  - given-names: Ni Putu Wulan
-    family-names: Lestari
-    email: wulanlestari231@gmail.com
-  - given-names: Barnaby
-    family-names: Burleigh
-    affiliation: University of Oxford
-    orcid: 'https://orcid.org/0009-0009-2295-9048'
 repository-code: 'https://github.com/engganolang/kahler-1987-shiny'
 abstract: >-
-  This is the online, Shiny web application serving the dataset titled "Retro-digitised Enggano-German dictionary derived from Kähler’s (1987) “Enggano-Deutsches Wörterbuch”" (Rajeg et al. 2024).
+  This is source R code to build the Shiny web application serving the dataset titled "Retro-digitised Enggano-German dictionary derived from Kähler’s (1987) “Enggano-Deutsches Wörterbuch”" (Rajeg et al. 2024).
 keywords:
   - Enggano
   - Enggano-German Dictionary
