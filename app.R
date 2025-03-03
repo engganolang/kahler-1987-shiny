@@ -77,7 +77,7 @@ ui <- page_navbar(
   fillable_mobile = TRUE,
   
   # Application title
-  title = "The Enggano-German Dictionary online",
+  title = "Enggano-German Dictionary online",
   window_title = "Enggano-German Dictionary online",
   
   # include your js script
@@ -98,7 +98,7 @@ ui <- page_navbar(
   ),
   # collapsible = TRUE,
   underline = TRUE,
-  nav_panel(title = "main",
+  nav_panel(title = "Home",
             card(
               card_body(
                 tags$figure(img(src = "file-oxweb-logo.gif", align = "left", width = 80, style = "margin-right: 5px; margin-top: 10px", display = "inline-block"), 
@@ -107,7 +107,7 @@ ui <- page_navbar(
                 tags$figcaption(em(a("This research", href="https://enggano.ling-phil.ox.ac.uk", target="_blank"), "is funded by the Arts and Humanities Research Council (AHRC) Grant ID ", a("AH/S011064/1", href="https://gtr.ukri.org/projects?ref=AH%2FS011064%2F1", target="_blank"), " and ", a("AH/W007290/1", href="https://gtr.ukri.org/projects?ref=AH%2FW007290%2F1", target="_blank"), ".")),
                 HTML('<p xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/"><a property="dct:title" rel="cc:attributionURL" href="https://doi.org/10.25446/oxford.28057742">The Enggano-German Dictionary online derived from Kähler’s (1987) “Enggano-Deutsches Wörterbuch”</a> by <span property="cc:attributionName">Gede Primahadi Wijaya Rajeg, Cokorda Rai Adi Pramartha, Ida Bagus Gede Sarasvananda, Putu Wahyu Widiatmika, Ida Bagus Made Ari Segara, Yul Fulgensia Rusman Pita, Fitri Koemba, I Gede Semara Dharma Putra, Putu Dea Indah Kartini, Ni Putu Wulan Lestari, and Barnaby Burleigh</span> is licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">CC BY-NC-SA 4.0<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1" alt=""></a></p>'),
                 h2("Overview"),
-                div(p("Welcome to the ", a("Shiny", href = "https://shiny.posit.co/", target = "_blank"), "web application serving the selected data from the retro-digitised Enggano-German dictionary ", a("(Rajeg et al. 2024)", href = "https://doi.org/10.25446/oxford.28057742.v1", target = "_blank"), "by ", a("Hans Kähler (1987).", href = "https://search.worldcat.org/title/18191699", target = "_blank"), "At the moment, users can browse the", actionLink("headword", "headword"), "represented in the original dictionary or the", actionLink("subentry", "sub-entry"), "for a given headword (if any). In the ", em("sub-entry"), "panel, information about the headword or root of the sub-entry is provided. The German, English, and Indonesian translations for the sub-entries are marked with '(sub)' in the column names.")),
+                div(p("Welcome to the ", a("Shiny", href = "https://shiny.posit.co/", target = "_blank"), "web application serving the selected data from the retro-digitised Enggano-German dictionary ", a("(Rajeg et al. 2024)", href = "https://doi.org/10.25446/oxford.28057742.v1", target = "_blank"), "by ", a("Hans Kähler (1987).", href = "https://search.worldcat.org/title/18191699", target = "_blank"), "At the moment, users can browse (i) the", actionLink("headword", "main entry"), "represented in the original dictionary or (ii) the", actionLink("subentry", "sub-entry"), "(if any) for a given main entry/headword. In the ", em("sub-entry"), "panel, information about the main entry (i.e., the headword or root form) of the sub-entry is provided (under the", tags$code("main entry"), "column). The German, English, and Indonesian translations for the sub-entries are marked with", tags$code("(sub)"), "in the column names.")),
                 
                 h2("How to cite"),
                 p("Please cite the original source and the digitised dictionary database as follows:"),
@@ -115,7 +115,7 @@ ui <- page_navbar(
                 div(tags$li("Rajeg, Gede Primahadi Wijaya; Pramartha, Cokorda Rai Adi; Sarasvananda, Ida Bagus Gede; Widiatmika, Putu Wahyu; Segara, Ida Bagus Made Ari; Pita, Yul Fulgensia Rusman; et al. (2024). Retro-digitised Enggano-German dictionary derived from Kähler’s (1987) “Enggano-Deutsches Wörterbuch”. University of Oxford. Dataset.", a("https://doi.org/10.25446/oxford.28057742", href = "https://doi.org/10.25446/oxford.28057742", target = "_blank")))
               )
             )),
-  nav_panel(title = "headword",
+  nav_panel(title = "Main entry",
             # layout_columns(
               
               # card for main entry description
@@ -142,7 +142,7 @@ ui <- page_navbar(
                 #)
               )
             ),
-  nav_panel(title = "sub-entry",
+  nav_panel(title = "Sub-entry",
             # layout_columns(
               
               # card for sub-entry description
@@ -192,6 +192,7 @@ server <- function(input, output, session) {
       select(-stem_homonymID) |> 
       collect() |> 
       mutate(across(where(is.character), ~replace_na(., "")))
+    
     k_stem_out <- reactable::reactable(k_stem_out,
       filterable = TRUE,
       searchable = TRUE,
@@ -199,9 +200,9 @@ server <- function(input, output, session) {
       showPagination = TRUE,
       highlight = TRUE,
       resizable = TRUE,
-      height = 495,
+      # height = 495,
       minRows = 5,
-      defaultPageSize = 100,
+      defaultPageSize = 10,
       elementId = "alphabet-select",
       columns = list(
         entry = reactable::colDef(show = TRUE, maxWidth = 80,
@@ -234,10 +235,10 @@ server <- function(input, output, session) {
       select(entry = kms_Alphabet, page = kms_page, stem_id, form = example_form_comm_untokenised, `German (sub)` = ex_DE,
              `English (sub)` = ex_EN,
              `Indonesian (sub)` = ex_IDN,
-             `headword/root` = stem_form_comm_untokenised, stem_homonymID, German = stem_DE, English = stem_EN, Indonesian = stem_IDN) |> 
-      mutate(`headword/root` = if_else(!is.na(stem_homonymID),
-                            paste(`headword/root`, "<sup><i>", stem_homonymID, "</i></sup>", sep = ""),
-                            `headword/root`),
+             `main entry` = stem_form_comm_untokenised, stem_homonymID, German = stem_DE, English = stem_EN, Indonesian = stem_IDN) |> 
+      mutate(`main entry` = if_else(!is.na(stem_homonymID),
+                            paste(`main entry`, "<sup><i>", stem_homonymID, "</i></sup>", sep = ""),
+                            `main entry`),
              entry = toupper(entry)) |> 
       distinct() |> 
       # filter(!is.na(German)) |> 
@@ -252,9 +253,9 @@ server <- function(input, output, session) {
                                        showPagination = TRUE,
                                        resizable = TRUE,
                                        highlight = TRUE,
-                                       height = 495,
+                                       # height = 495,
                                        minRows = 5,
-                                       defaultPageSize = 100,
+                                       defaultPageSize = 10,
                                        elementId = "alphabet-select",
                                        columns = list(
                                          entry = reactable::colDef(show = TRUE, maxWidth = 80,
@@ -269,7 +270,7 @@ server <- function(input, output, session) {
                                                                        style = "width: 100%; height: 28px;"
                                                                      )
                                                                    }),
-                                         `headword/root` = reactable::colDef(html = TRUE,
+                                         `main entry` = reactable::colDef(html = TRUE,
                                                                              filterMethod = js_filter,
                                                                              cell = js_match_style),
                                          form = reactable::colDef(html = TRUE,
@@ -298,11 +299,11 @@ server <- function(input, output, session) {
     
     # the following code run the clicking on the hyperlink of the main panel/page
     observeEvent(input$headword, {
-      updateTabsetPanel(session = session, "tabs", "headword")
+      updateTabsetPanel(session = session, "tabs", "Main entry")
     })
     
     observeEvent(input$subentry, {
-      updateTabsetPanel(session = session, "tabs", "sub-entry")
+      updateTabsetPanel(session = session, "tabs", "Sub-entry")
     })
     
 }
