@@ -1,6 +1,6 @@
-R codes for the web application serving the dataset from
-“Retro-digitised Enggano-German dictionary derived from Kähler’s (1987)
-“Enggano-Deutsches Wörterbuch””
+R codes for the [Shiny](https://shiny.posit.co/) web application serving
+the dataset from “Retro-digitised Enggano-German dictionary derived from
+Kähler’s (1987) “Enggano-Deutsches Wörterbuch””
 ================
 [Gede Primahadi Wijaya
 Rajeg](https://www.ling-phil.ox.ac.uk/people/gede-rajeg)
@@ -37,9 +37,11 @@ BY-NC-SA 4.0
 ## How to cite
 
 Please cite the original source ([Kähler 1987](#ref-kähler1987)) (if in
-APA7<sup>th</sup>) and the particular version of the digitised
-dictionary dataset ([Rajeg et al. 2024](#ref-rajeg_kahler)) (in
-[DataCite](https://support.datacite.org/docs/data-citation)) as follows:
+APA7<sup>th</sup>), the particular version of the digitised dictionary
+dataset ([Rajeg et al. 2024](#ref-rajeg_kahler)), and the web
+application ([Rajeg, Pramartha, et al. 2025](#ref-rajeg_kahler_2025))
+(in [DataCite](https://support.datacite.org/docs/data-citation)) as
+follows:
 
 > Kähler, H. (with Schmidt, H.). (1987). *Enggano-Deutsches Wörterbuch*.
 > Dietrich Reimer Verlag. <https://search.worldcat.org/title/18191699>
@@ -51,6 +53,14 @@ dictionary dataset ([Rajeg et al. 2024](#ref-rajeg_kahler)) (in
 > “Enggano-Deutsches Wörterbuch”. University of Oxford. Dataset.
 > <https://doi.org/10.25446/oxford.28057742.v1>
 
+> Rajeg, Gede Primahadi Wijaya; Pramartha, Cokorda Rai Adi;
+> Sarasvananda, Ida Bagus Gede; Widiatmika, Putu Wahyu; Segara, Ida
+> Bagus Made Ari; Pita, Yul Fulgensia Rusman; et al. (2025). The
+> Enggano-German Dictionary online derived from Kähler’s (1987)
+> “Enggano-Deutsches Wörterbuch”. University of Oxford. Online Resource.
+> <https://doi.org/10.25446/oxford.28532666>
+> <https://enggano.shinyapps.io/enggano-german-dictionary/>
+
 For future updates, please check the
 [Releases](https://github.com/engganolang/kahler-1987-shiny/releases)
 page on this GitHub repository.
@@ -60,9 +70,9 @@ page on this GitHub repository.
 This repository hosts the source R codes for building [the
 Enggano-German Dictionary online
 web-application](https://enggano.shinyapps.io/enggano-german-dictionary/)
-serving the retro-digitised[^1] Enggano-German Dictionary dataset
-([Rajeg et al. 2024](#ref-rajeg_kahler)) by Hans Kähler
-([1987](#ref-kähler1987)).
+([Rajeg, Pramartha, et al. 2025](#ref-rajeg_kahler_2025)) serving the
+retro-digitised[^1] Enggano-German Dictionary dataset ([Rajeg et al.
+2024](#ref-rajeg_kahler)) by Hans Kähler ([1987](#ref-kähler1987)).
 
 The work on the manual checking of the Indonesian translation from the
 English translation is available
@@ -70,7 +80,8 @@ English translation is available
 the dictionary are included in the Shiny web application for the
 [*EnoLEX*](https://doi.org/10.25446/oxford.28282169) database ([Krauße
 et al. 2024](#ref-krausse_enolex_2024); [Rajeg, Krauße & Pramartha
-2024](#ref-rajeg_enolex_2024); [Rajeg et al. 2025](#ref-rajeg_r_2025)).
+2024](#ref-rajeg_enolex_2024); [Rajeg, Krauße, et al.
+2025](#ref-rajeg_r_2025)).
 
 ### References
 
@@ -124,6 +135,17 @@ Fulgensia Rusman Pita, Fitriani Putri Koemba, et al. 2024.
 Retro-digitised Enggano-German dictionary derived from Kähler’s (1987)
 “Enggano-Deutsches Wörterbuch.” Dataset. University of Oxford.
 https://doi.org/<https://doi.org/10.25446/oxford.28057742.v1>.
+
+</div>
+
+<div id="ref-rajeg_kahler_2025" class="csl-entry">
+
+Rajeg, Gede Primahadi Wijaya, Cokorda Rai Adi Pramartha, Ida Bagus Gede
+Sarasvananda, Putu Wahyu Widiatmika, Ida Bagus Made Ari Segara, Yul
+Fulgensia Rusman Pita, Fitriani Putri Koemba, et al. 2025. The
+Enggano-German Dictionary online derived from Kähler’s (1987)
+“Enggano-Deutsches Wörterbuch.” Online resource. University of Oxford.
+<https://doi.org/10.25446/oxford.28532666>.
 
 </div>
 
