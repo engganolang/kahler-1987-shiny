@@ -3,7 +3,7 @@
 
 cff-version: 1.2.0
 title: >-
-  R codes for the web application serving the dataset from "Retro-digitised Enggano-German dictionary derived from Kähler’s (1987) “Enggano-Deutsches Wörterbuch”"
+  R codes for the Enggano-German Dictionary web application serving the dataset from "Retro-digitised Enggano-German dictionary derived from Kähler’s (1987) “Enggano-Deutsches Wörterbuch”"
 message: >-
   Please cite this software if you use it for your teaching and/or research
 type: software
@@ -19,7 +19,7 @@ authors:
     orcid: 'https://orcid.org/0000-0002-2047-8621'
 repository-code: 'https://github.com/engganolang/kahler-1987-shiny'
 abstract: >-
-  This is source R code to build the Shiny web application serving the dataset titled "Retro-digitised Enggano-German dictionary derived from Kähler’s (1987) “Enggano-Deutsches Wörterbuch”" (Rajeg et al. 2024).
+  This repository hosts the source R codes to build the Shiny web application serving the dataset titled "Retro-digitised Enggano-German dictionary derived from Kähler’s (1987) “Enggano-Deutsches Wörterbuch”" (Rajeg et al. 2024).
 keywords:
   - Enggano
   - Enggano-German Dictionary
