@@ -1,5 +1,5 @@
-R codes for the [Shiny](https://shiny.posit.co/) web application serving
-the dataset from “Retro-digitised Enggano-German dictionary derived from
+R codes for the Enggano-German Dictionary web application serving the
+dataset from “Retro-digitised Enggano-German dictionary derived from
 Kähler’s (1987) “Enggano-Deutsches Wörterbuch””
 ================
 [Gede Primahadi Wijaya
@@ -134,7 +134,7 @@ Sarasvananda, Putu Wahyu Widiatmika, Ida Bagus Made Ari Segara, Yul
 Fulgensia Rusman Pita, Fitriani Putri Koemba, et al. 2024.
 Retro-digitised Enggano-German dictionary derived from Kähler’s (1987)
 “Enggano-Deutsches Wörterbuch.” Dataset. University of Oxford.
-https://doi.org/<https://doi.org/10.25446/oxford.28057742.v1>.
+<https://doi.org/10.25446/oxford.28057742.v1>.
 
 </div>
 
