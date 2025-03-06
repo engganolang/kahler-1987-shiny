@@ -22,6 +22,69 @@ library(reactable)
 
 kahler <- DBI::dbConnect(RSQLite::SQLite(), "kahler.sqlite")
 
+k_full <- tbl(kahler, "full")
+
+k_stem <- k_full |> 
+  select(matches("^stem|kms_page|kms_entry|kms_Alphabet"))
+
+k_stem_interim <- k_stem |> 
+  
+  select(entry = kms_Alphabet, 
+         page = kms_page, 
+         stem_id, 
+         form = stem_form_comm_untokenised, 
+         stem_homonymID, 
+         German = stem_DE, 
+         English = stem_EN, 
+         Indonesian = stem_IDN) |> 
+  mutate(form = if_else(!is.na(stem_homonymID),
+                        paste(form, 
+                              "<sup><i>", 
+                              stem_homonymID, 
+                              "</i></sup>", 
+                              sep = ""),
+                        form),
+         entry = toupper(entry)) |> 
+  distinct() |> 
+  filter(!is.na(German)) |>
+  select(-stem_homonymID) |> 
+  collect() |> 
+  mutate(across(where(is.character), ~replace_na(., "")))
+
+subentry_cols <- "^ex|stem_form|stem_homonymID$|stem_ID|stem_(DE|EN|IDN)|kms_page|kms_Alphabet"
+
+k_subentry <- k_full |> 
+  select(matches(subentry_cols)) |> 
+  filter(!is.na(example_id))
+
+k_subentry_interim <- k_subentry |> 
+  select(entry = kms_Alphabet, 
+         page = kms_page, 
+         example_id, 
+         form = example_form_comm_untokenised, 
+         `German (sub)` = ex_DE,
+         `English (sub)` = ex_EN,
+         `Indonesian (sub)` = ex_IDN, 
+         stem_id,
+         `main entry` = stem_form_comm_untokenised, 
+         stem_homonymID, 
+         German = stem_DE, 
+         English = stem_EN, 
+         Indonesian = stem_IDN) |> 
+  mutate(`main entry` = if_else(!is.na(stem_homonymID),
+                                paste(`main entry`, 
+                                      "<sup><i>", 
+                                      stem_homonymID, 
+                                      "</i></sup>", 
+                                      sep = ""),
+                                `main entry`),
+         entry = toupper(entry)) |> 
+  distinct() |> 
+  # filter(!is.na(German)) |> 
+  select(-stem_homonymID) |> 
+  collect() |> 
+  mutate(across(where(is.character), ~replace_na(., "")))
+
 # column filtering method ====
 ## source: https://github.com/rjake/one-off-projects/blob/main/R/posit-table-contest-2022/posit-table-contest-2022.qmd
 
@@ -160,11 +223,13 @@ ui <- page_navbar(
               # card for main entry output
               card(
                 
+                id = "main_entry",
                 # height = 300,
                 #layout_sidebar(
                 #  sidebar = sidebar(
                     
                 #  ),
+                  # div(tags$h3("Main entry table")),
                   div(reactable::reactableOutput(outputId = "main_entry_output"),
                       style = "font-size: 90%")
                 #)
@@ -205,131 +270,124 @@ ui <- page_navbar(
 
 # SERVER: Define server logic required =====
 server <- function(input, output, session) {
+  
+  k_stem_out <- reactive({
     
-    k_full <- tbl(kahler, "full")
+    k_stem_interim |> 
     
-    k_stem <- k_full |> 
-      select(matches("^stem|kms_page|kms_Alphabet"))
-    
-    k_subentry <- k_full |> 
-      select(matches("^ex|stem_form|stem_homonymID$|stem_ID|stem_(DE|EN|IDN)|kms_page|kms_Alphabet")) |> 
-      filter(!is.na(example_id))
-    
-    k_stem_out <- k_stem |> 
-      select(entry = kms_Alphabet, page = kms_page, stem_id, form = stem_form_comm_untokenised, stem_homonymID, German = stem_DE, English = stem_EN, Indonesian = stem_IDN) |> 
-      mutate(form = if_else(!is.na(stem_homonymID),
-                            paste(form, "<sup><i>", stem_homonymID, "</i></sup>", sep = ""),
-                            form),
-             entry = toupper(entry)) |> 
-      distinct() |> 
-      filter(!is.na(German)) |>
-      select(-stem_homonymID) |> 
-      collect() |> 
-      mutate(across(where(is.character), ~replace_na(., "")))
-    
-    k_stem_out <- reactable::reactable(k_stem_out,
-      filterable = TRUE,
-      searchable = TRUE,
-      searchMethod = regex_search_method,
-      showPagination = TRUE,
-      highlight = TRUE,
-      resizable = TRUE,
-      # height = 495,
-      minRows = 5,
-      defaultPageSize = 10,
-      elementId = "alphabet-select",
-      columns = list(
-        entry = reactable::colDef(show = TRUE, maxWidth = 80,
-                                  filterInput = function(values, name) {
-                                    tags$select(
-                                      # Set to undefined to clear the filter
-                                      onchange = sprintf("Reactable.setFilter('alphabet-select', '%s', event.target.value || undefined)", name),
-                                      # "All" has an empty value to clear the filter, and is the default option
-                                      tags$option(value = "", "All"),
-                                      lapply(unique(values), tags$option),
-                                      "aria-label" = sprintf("Filter %s", name),
-                                      style = "width: 100%; height: 28px;"
-                                    )
-                                  }),
-        form = reactable::colDef(html = TRUE, maxWidth = 185,
-                                 filterMethod = js_filter,
-                                 cell = js_match_style),
-        German = reactable::colDef(html = TRUE,filterMethod = js_filter,
-                                   cell = js_match_style),
-        English = reactable::colDef(html = TRUE, filterMethod = js_filter,
-                                   cell = js_match_style),
-        Indonesian = reactable::colDef(html = TRUE, filterMethod = js_filter,
-                                   cell = js_match_style),
-        stem_id = reactable::colDef(show = FALSE),
-        page = reactable::colDef(show = FALSE)
-      )
+    reactable::reactable(filterable = TRUE,
+                         searchable = TRUE,
+                         searchMethod = regex_search_method,
+                         showPagination = TRUE,
+                         highlight = TRUE,
+                         resizable = TRUE,
+                         # height = 495,
+                         minRows = 5,
+                         defaultPageSize = 10,
+                         onClick = JS(
+                           "function(rowInfo, column) {
+                           if(column.id !== \"entry\")
+                           Shiny.setInputValue('main_entry_details', { index: rowInfo.index + 1 }, { priority: 'event' })
+                           }
+                           "
+                         ),
+                         elementId = "alphabet-select",
+                         columns = list(
+                           entry = reactable::colDef(show = TRUE, 
+                                                     maxWidth = 80,
+                                                     filterInput = function(values, name) {
+                                                       tags$select(
+                                                         # Set to undefined to clear the filter
+                                                         onchange = sprintf("Reactable.setFilter('alphabet-select', '%s', event.target.value || undefined)", name),
+                                                         # "All" has an empty value to clear the filter, and is the default option
+                                                         tags$option(value = "", "All"),
+                                                         lapply(unique(values), tags$option),
+                                                         "aria-label" = sprintf("Filter %s", name),
+                                                         style = "width: 100%; height: 28px;"
+                                                       )
+                                                     }),
+                           form = reactable::colDef(html = TRUE, 
+                                                    maxWidth = 185,
+                                                    filterMethod = js_filter,
+                                                    cell = js_match_style),
+                           German = reactable::colDef(html = TRUE,
+                                                      filterMethod = js_filter,
+                                                      cell = js_match_style),
+                           English = reactable::colDef(html = TRUE, 
+                                                       filterMethod = js_filter,
+                                                       cell = js_match_style),
+                           Indonesian = reactable::colDef(html = TRUE, 
+                                                          filterMethod = js_filter,
+                                                          cell = js_match_style),
+                           stem_id = reactable::colDef(show = FALSE),
+                           page = reactable::colDef(show = FALSE)
+                         )
     )
+  
+  })
+  
+  k_subentry_out <- reactive({
     
-    k_subentry_out <- k_subentry |> 
-      select(entry = kms_Alphabet, page = kms_page, stem_id, form = example_form_comm_untokenised, `German (sub)` = ex_DE,
-             `English (sub)` = ex_EN,
-             `Indonesian (sub)` = ex_IDN,
-             `main entry` = stem_form_comm_untokenised, stem_homonymID, German = stem_DE, English = stem_EN, Indonesian = stem_IDN) |> 
-      mutate(`main entry` = if_else(!is.na(stem_homonymID),
-                            paste(`main entry`, "<sup><i>", stem_homonymID, "</i></sup>", sep = ""),
-                            `main entry`),
-             entry = toupper(entry)) |> 
-      distinct() |> 
-      # filter(!is.na(German)) |> 
-      select(-stem_homonymID) |> 
-      collect() |> 
-      mutate(across(where(is.character), ~replace_na(., "")))
+    k_subentry_interim |> 
     
-    k_subentry_out <- reactable::reactable(k_subentry_out,
-                                       filterable = TRUE,
-                                       searchable = TRUE,
-                                       searchMethod = regex_search_method,
-                                       showPagination = TRUE,
-                                       resizable = TRUE,
-                                       highlight = TRUE,
-                                       # height = 495,
-                                       minRows = 5,
-                                       defaultPageSize = 10,
-                                       elementId = "alphabet-select",
-                                       columns = list(
-                                         entry = reactable::colDef(show = TRUE, maxWidth = 80,
-                                                                   filterInput = function(values, name) {
-                                                                     tags$select(
-                                                                       # Set to undefined to clear the filter
-                                                                       onchange = sprintf("Reactable.setFilter('alphabet-select', '%s', event.target.value || undefined)", name),
-                                                                       # "All" has an empty value to clear the filter, and is the default option
-                                                                       tags$option(value = "", "All"),
-                                                                       lapply(unique(values), tags$option),
-                                                                       "aria-label" = sprintf("Filter %s", name),
-                                                                       style = "width: 100%; height: 28px;"
-                                                                     )
-                                                                   }),
-                                         `main entry` = reactable::colDef(html = TRUE,
-                                                                             filterMethod = js_filter,
-                                                                             cell = js_match_style),
-                                         form = reactable::colDef(html = TRUE,
-                                                                             filterMethod = js_filter,
-                                                                             cell = js_match_style),
-                                         German = reactable::colDef(html = TRUE, filterMethod = js_filter,
-                                                                    cell = js_match_style),
-                                         English = reactable::colDef(html = TRUE, filterMethod = js_filter,
-                                                                     cell = js_match_style),
-                                         Indonesian = reactable::colDef(html = TRUE, filterMethod = js_filter,
-                                                                        cell = js_match_style),
-                                         `German (sub)` = reactable::colDef(html = TRUE, filterMethod = js_filter,
-                                                                    cell = js_match_style),
-                                         `English (sub)` = reactable::colDef(html = TRUE, filterMethod = js_filter,
-                                                                     cell = js_match_style),
-                                         `Indonesian (sub)` = reactable::colDef(html = TRUE,
-                                                                                filterMethod = js_filter,
-                                                                        cell = js_match_style),
-                                         stem_id = reactable::colDef(show = FALSE),
-                                         page = reactable::colDef(show = FALSE)
-                                       )
+    reactable::reactable(filterable = TRUE,
+                         searchable = TRUE,
+                         searchMethod = regex_search_method,
+                         showPagination = TRUE,
+                         resizable = TRUE,
+                         highlight = TRUE,
+                         # height = 495,
+                         minRows = 5,
+                         defaultPageSize = 10,
+                         elementId = "alphabet-select",
+                         columns = list(
+                           entry = reactable::colDef(show = TRUE, 
+                                                     maxWidth = 80,
+                                                     filterInput = function(values, name) {
+                                                       tags$select(
+                                                         # Set to undefined to clear the filter
+                                                         onchange = sprintf("Reactable.setFilter('alphabet-select', '%s', event.target.value || undefined)", name),
+                                                         # "All" has an empty value to clear the filter, and is the default option
+                                                         tags$option(value = "", "All"),
+                                                         lapply(unique(values), tags$option),
+                                                         "aria-label" = sprintf("Filter %s", name),
+                                                         style = "width: 100%; height: 28px;"
+                                                       )
+                                                     }),
+                           `main entry` = reactable::colDef(html = TRUE,
+                                                            filterMethod = js_filter,
+                                                            cell = js_match_style),
+                           form = reactable::colDef(html = TRUE,
+                                                    filterMethod = js_filter,
+                                                    cell = js_match_style),
+                           German = reactable::colDef(html = TRUE, 
+                                                      filterMethod = js_filter,
+                                                      cell = js_match_style),
+                           English = reactable::colDef(html = TRUE, 
+                                                       filterMethod = js_filter,
+                                                       cell = js_match_style),
+                           Indonesian = reactable::colDef(html = TRUE, 
+                                                          filterMethod = js_filter,
+                                                          cell = js_match_style),
+                           `German (sub)` = reactable::colDef(html = TRUE, 
+                                                              filterMethod = js_filter,
+                                                              cell = js_match_style),
+                           `English (sub)` = reactable::colDef(html = TRUE, 
+                                                               filterMethod = js_filter,
+                                                               cell = js_match_style),
+                           `Indonesian (sub)` = reactable::colDef(html = TRUE,
+                                                                  filterMethod = js_filter,
+                                                                  cell = js_match_style),
+                           stem_id = reactable::colDef(show = FALSE),
+                           example_id = reactable::colDef(show = FALSE),
+                           page = reactable::colDef(show = FALSE)
+                         )
     )
-    
-    output$main_entry_output <- reactable::renderReactable(k_stem_out)
-    output$subentry_output <- reactable::renderReactable(k_subentry_out)
+  
+  })
+  
+    output$main_entry_output <- reactable::renderReactable(k_stem_out())
+    output$subentry_output <- reactable::renderReactable(k_subentry_out())
     
     # the following code run the clicking on the hyperlink of the main panel/page
     observeEvent(input$headword, {
@@ -339,6 +397,77 @@ server <- function(input, output, session) {
     observeEvent(input$subentry, {
       updateTabsetPanel(session = session, "tabs", "Sub-entry")
     })
+    
+    observeEvent(input$main_entry_details, {
+      row_num <- as.numeric(input$main_entry_details$index)
+      main_entry_id <- k_stem_interim$stem_id[row_num]
+      main_entry_form <- k_stem_interim$form[row_num]
+      k_stem_filtered <- filter(k_stem, stem_id == main_entry_id) |> 
+        distinct()
+      # page number
+      pagenum <- pull(k_stem_filtered, kms_page)
+      entrynum <- pull(k_stem_filtered, kms_entry_no)
+      # variant forms
+      variant_forms <- pull(filter(k_stem_filtered, is.na(stem_dialectVariant)), stem_formVarian_untokenised)
+      # dialect variants
+      dialect_forms <- pull(filter(k_stem_filtered, !is.na(stem_dialectVariant)), stem_dialectVariant)
+      # etymological information
+      stem_etym_form <- pull(filter(k_stem_filtered, !is.na(stem_etymological_form)), stem_etymological_form)
+      stem_etym_lang <- pull(filter(k_stem_filtered, !is.na(stem_etymological_language_donor)), stem_etymological_language_donor)
+      stem_etym_lang_abbrev <- pull(filter(k_stem, 
+                                           !is.na(stem_etymological_language_donor), 
+                                           !stem_etymological_language_donor %in% c("PAN", "SMtw")), 
+                                    stem_etymological_language_donor) |> 
+        unique()
+      stem_etym_lang_abbrev <- sort(c(stem_etym_lang_abbrev, "Sim (Simalur)", "Bugi (Buginesisch)", "Si(ch) (Sichule)"))
+      # loanword information
+      stem_loan_form <- pull(filter(k_stem_filtered, !is.na(stem_loan_form)),
+                             stem_loan_form)
+      stem_loan_lang <- pull(filter(k_stem_filtered, !is.na(stem_loan_lang)),
+                             stem_loan_lang)
+      stem_loan_lang <- if_else(is.na(stem_loan_lang), "-", stem_loan_lang)
+      # remarks info
+      stem_remark <- k_stem_filtered |> 
+        filter(!is.na(stem_remark_DE)) |> 
+        mutate(myremarks = str_c("<li>DE: ", stem_remark_DE, "</li><li>EN: ", 
+                                 stem_remark_EN, "</li><li>ID: ", 
+                                 stem_remark_IDN, "</li>", sep = "")) |> 
+        pull(myremarks)
+      
+      showModal(
+        modalDialog(
+          size = "l",
+          easyClose = TRUE,
+          title = "Details",
+          
+          tags$h3(HTML(main_entry_form)),
+          tags$p("DE:", k_stem_interim$German[row_num], HTML("</br>EN:"), k_stem_interim$English[row_num], HTML("</br>ID:"), k_stem_interim$Indonesian[row_num]),
+          if (any(!is.na(variant_forms))) {
+            div(p(HTML("<b>variant form(s)</b>:</br><li>", variant_forms, "</li>")))
+          },
+          if (any(!is.na(dialect_forms))) {
+            div(p(HTML("<b>variant form(s) marked with <em>DIA</em>(lectal) in the source</b>:</br><li>", dialect_forms, "</li>")))
+          },
+          if (any(!is.na(stem_etym_form)) | any(!is.na(stem_etym_lang))) {
+            div(p(HTML("<b>Reconstruction info</b>:<li>form: <em>", stem_etym_form, "</em></li><li>source language: ", stem_etym_lang, "</li>")))
+            
+          },
+          # if (any(!is.na(stem_etym_form)) | any(!is.na(stem_etym_lang))) {
+          #   div(p(HTML("<b>List of the etymological source language abreviation</b>:"), HTML(str_c(str_c("<li>", stem_etym_lang_abbrev, "</li>", sep = ""), collapse = ""))))
+          # },
+          if (any(!is.na(stem_loan_form))) {
+            div(p(HTML("<b>Loanword info (marked with ̊   in the dictionary)</b>:<li>form: <em>", stem_loan_form, "</em></li><li>source language: ", stem_loan_lang, "</li>") ))
+          },
+          if (any(!is.na(stem_remark))) {
+            div(p(HTML("<b>Notes/remarks</b>:", stem_remark)))
+          },
+          tags$p(HTML("<em>Kähler (1987:", pagenum, "; entry no.", entrynum, ")")),
+          
+        )
+      )
+    }
+      
+    )
     
 }
 
