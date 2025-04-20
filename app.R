@@ -146,11 +146,13 @@ link_enggano_web <- tags$a(shiny::icon("globe", lib = "glyphicon"), "Enggano web
                            href="https://enggano.ling-phil.ox.ac.uk/", 
                            target="_blank")
 
-link_contemporary_enggano <- tags$a(shiny::icon("globe", lib = "glyphicon"), "Contemporary Enggano Dictionary",
+link_contemporary_enggano <- tags$a(shiny::icon("globe", lib = "glyphicon"), 
+                                    "Contemporary Enggano Dictionary",
                                     href="https://portal.sds.ox.ac.uk/projects/Contemporary_Enggano_Dictionary/238013",
                                     target="_blank")
 
-link_kahler <- tags$a(shiny::icon("globe", lib = "glyphicon"), "Digitised Enggano-German dictionary",
+link_kahler <- tags$a(shiny::icon("globe", lib = "glyphicon"), 
+                      "Digitised Enggano-German dictionary",
                       href="https://portal.sds.ox.ac.uk/projects/Retro-digitisation_of_the_Enggano-German_Dictionary/237998",
                       target="_blank")
 
@@ -162,7 +164,8 @@ link_enolex <- tags$a(shiny::icon("globe", lib = "glyphicon"), "EnoLEX",
 ui <- page_navbar(
   
   tags$head(
-    tags$link(rel = "icon", type = "image/png", sizes = "32x32", href = "ox_brand1_rev.png")),
+    tags$link(rel = "icon", type = "image/png", sizes = "32x32", 
+              href = "ox_brand1_rev.png")),
   
   id = "tabs",
   fillable = FALSE,
@@ -285,15 +288,9 @@ ui <- page_navbar(
               #)
             )
   ),
-  nav_panel_hidden(value = "Info",
-                   card(
-                     fill = FALSE,
-                     id = "DetailsInfo",
-                     div(uiOutput(outputId = "DetailsPage")),
-                     card_footer(
-                       HTML('<p style="font-size:12px" xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/"><a property="dct:title" rel="cc:attributionURL" href="https://doi.org/10.25446/oxford.28532666">The Enggano-German Dictionary online derived from Kähler’s (1987) “Enggano-Deutsches Wörterbuch”</a> by <span property="cc:attributionName">Rajeg et al. (2025)</span> is licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International</a><a><img style="height:15px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""><img style="height:15px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""><img style="height:15px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1" alt=""><img style="height:15px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1" alt=""></a></p>')
-                     )
-                   )),
+  nav_panel_hidden(value = "Info", 
+                   uiOutput(outputId = "DetailsPage")),
+  nav_spacer(),
   nav_menu(title = "Links",
            align = "left",
            nav_item(link_kahler_github),
@@ -329,12 +326,12 @@ server <- function(input, output, session) {
                            }
                            "
                 ),
-                # elementId = "alphabet-select", # commented to suppress warning
+                elementId = "alphabet-select", # commented to suppress warning
                 columns = list(
                   details = colDef(
                     name = "",
                     sortable = FALSE,
-                    cell = function() htmltools::tags$button("more", class="btn btn-info btn-sm btn-border-radius-lg"),
+                    cell = function() htmltools::tags$button("more", class="btn btn-primary btn-sm rounded toggle"),
                     filterable = FALSE,
                     maxWidth = 83
                   ),
@@ -390,7 +387,7 @@ server <- function(input, output, session) {
                   filterPlaceholder = "Search"
                 ),
                 defaultPageSize = 10,
-                # elementId = "alphabet-select", # commented to suppress warning
+                elementId = "alphabet-select", # comment this to suppress warning
                 columns = list(
                   entry = colDef(show = TRUE, 
                                  maxWidth = 80,
@@ -478,8 +475,8 @@ server <- function(input, output, session) {
     main_entry_form <- k_stem_interim$form[row_num]
     main_entry_homonym_id <- k_stem_interim$stem_homonymID[row_num]
     main_entry_form <- if_else(is.na(main_entry_homonym_id), 
-                               str_c("<i>", main_entry_form, "</i>", sep = ""),
-                               str_c("<i>", main_entry_form, "<sup>", main_entry_homonym_id, "</sup></i>", sep = ""))
+                               main_entry_form,
+                               str_c(main_entry_form, "<sup>", main_entry_homonym_id, "</sup>", sep = ""))
     k_stem_filtered <- filter(k_stem, stem_id == main_entry_id) |> 
       distinct()
     
@@ -513,44 +510,67 @@ server <- function(input, output, session) {
     # remarks info
     stem_remark <- k_stem_filtered |> 
       filter(!is.na(stem_remark_DE)) |> 
-      mutate(myremarks = str_c("<li><sub><i>DE</i></sub>", stem_remark_DE, "</li><li><sub><i>EN</i></sub>", 
-                               stem_remark_EN, "</li><li><sub><i>ID</i></sub>", 
+      mutate(myremarks = str_c("<li><sub><i>DE</i></sub> ", stem_remark_DE, "</li><li><sub><i>EN</i></sub> ", 
+                               stem_remark_EN, "</li><li><sub><i>ID</i></sub> ", 
                                stem_remark_IDN, "</li>", sep = "")) |> 
       pull(myremarks)
     
     details <- reactive({
-      card_body(
+      card(
+        fill = FALSE,
+        id = "DetailsInfo",
+        card_body(
+          fillable = FALSE,
           tags$h2(HTML(main_entry_form)),
           tags$p(HTML("<li>"), k_stem_interim$German[row_num], HTML("<sub><i>DE</i></sub></li><li>"), k_stem_interim$English[row_num], HTML("<sub><i>EN</i></sub></li><li>"), k_stem_interim$Indonesian[row_num], HTML("<sub><i>ID</i></sub></li>")),
           if (any(!is.na(variant_forms))) {
-            div(p(HTML("<b>variant form(s)</b>:</br><li>", variant_forms, "</li>")))
+            div(p(HTML("<b>variant form(s)</b>:</br><li>", variant_forms, "</li></br>")))
           },
           if (any(!is.na(dialect_forms))) {
-            div(p(HTML("<b>variant form(s) marked with <em>DIA</em>(lectal) in the source</b>:</br><li>", dialect_forms, "</li>")))
+            div(p(HTML("<b>variant form(s) marked with <em>DIA</em>(lectal) in the source</b>:</br><li>", dialect_forms, "</li></br>")))
           },
           if (any(!is.na(stem_etym_form)) | any(!is.na(stem_etym_lang))) {
-            div(p(HTML("<b>Reconstruction info</b>:<li>form: <em>", stem_etym_form, "</em></li><li>source language: ", stem_etym_lang, "</li>")))
-
+            div(p(HTML("<b>Reconstruction info</b>:<li>form: <em>", stem_etym_form, "</em></li><li>source language: ", stem_etym_lang, "</li></br>")))
+            
           },
           # if (any(!is.na(stem_etym_form)) | any(!is.na(stem_etym_lang))) {
           #   div(p(HTML("<b>List of the etymological source language abreviation</b>:"), HTML(str_c(str_c("<li>", stem_etym_lang_abbrev, "</li>", sep = ""), collapse = ""))))
           # },
           if (any(!is.na(stem_loan_form))) {
-            div(p(HTML("<b>Loanword info (marked with ̊   in the dictionary)</b>:<li>form: <em>", stem_loan_form, "</em></li><li>source language: ", stem_loan_lang, "</li>") ))
+            if (length(stem_loan_form) == 1) {
+              div(p(HTML("<b>Loanword info (marked with   ̊    in the dictionary)</b>:<li>form: <em>", stem_loan_form, "</em></li><li>source language: ", stem_loan_lang, "</li></br>") ))
+            } else {
+              stem_loan_form <- str_c(stem_loan_form, collapse = "; ")
+              stem_loan_lang <- str_c(stem_loan_lang, collapse = "; ")
+              div(p(HTML("<b>Loanword info (marked with   ̊    in the dictionary)</b>:<li>form: <em>", stem_loan_form, "</em></li><li>source language: ", stem_loan_lang, "</li></br>") ))
+            }
           },
           if (any(!is.na(stem_remark))) {
             div(p(HTML("<b>Notes/remarks</b>:", stem_remark)))
           },
-          tags$p(HTML("<em>Kähler (1987:", pagenum, "; entry no.", entrynum, ")</br>")),
-          actionButton("BackToMain", "Back", class = "btn-danger btn-lg", style = "font-size: 75%"))
-      
+          if (length(pagenum) == 1 & length(entrynum) == 1) {
+            
+            tags$p(HTML("</br>Kähler (1987:", pagenum, "; entry no.", entrynum, ")</br>"))
+            
+          } else {
+            
+            tags$p(HTML("</br>Kähler (1987:", str_c(unique(pagenum), collapse = ", "), "; entry no.", str_c(unique(entrynum), collapse = ", "), ")</br>"))
+            
+          },
+          actionButton("BackToMain", "Back", class = "btn-primary btn-lg rounded", style = "font-size: 75%"))
+        ,
+        card_footer(
+          HTML('<p style="font-size:12px" xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/"><a property="dct:title" rel="cc:attributionURL" href="https://doi.org/10.25446/oxford.28532666">The Enggano-German Dictionary online derived from Kähler’s (1987) “Enggano-Deutsches Wörterbuch”</a> by <span property="cc:attributionName">Rajeg et al. (2025)</span> is licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International</a><a><img style="height:15px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""><img style="height:15px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""><img style="height:15px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1" alt=""><img style="height:15px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1" alt=""></a></p>')
+        )
+      )
+            
     })
     
     #if (!is.null(input$main_entry_details$index)) {
       
-      nav_show("tabs", "Info", select = TRUE, session = session)
+      observe(nav_show("tabs", "Info", select = TRUE, session = session))
       # nav_insert("tabs", target = "Links", position = "before", select = TRUE, session = session)
-      # nav_select("tabs", selected = "Info", session = session)
+      # observe(nav_select("tabs", selected = "Info", session = session))
       output$DetailsPage <- renderUI(details())
       
     #} else {
