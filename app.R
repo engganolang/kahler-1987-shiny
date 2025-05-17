@@ -23,6 +23,8 @@ library(htmltools)
 
 kahler <- DBI::dbConnect(RSQLite::SQLite(), "kahler.sqlite")
 
+lang_df <- read_rds("lang_df.rds")
+
 k_stem <- tbl(kahler, "full") |> 
   select(matches("^stem|kms_page|kms_entry|kms_Alphabet"))
 
@@ -81,7 +83,9 @@ k_subentry_interim <- k_subentry |>
     #       "</i></sup>", 
     #       sep = ""),
     # `main entry`),
-    entry = toupper(entry)) |> 
+    entry = toupper(entry),
+    details = NA) |> 
+  relocate(details, .before = form) |> 
   distinct() |> 
   # filter(!is.na(German)) |> 
   # select(-stem_homonymID) |>
@@ -290,14 +294,16 @@ ui <- page_navbar(
   ),
   nav_panel_hidden(value = "Info", 
                    uiOutput(outputId = "DetailsPage")),
-  nav_spacer(),
-  nav_menu(title = "Links",
-           align = "left",
-           nav_item(link_kahler_github),
-           nav_item(link_enggano_web),
-           nav_item(link_contemporary_enggano),
-           nav_item(link_kahler),
-           nav_item(link_enolex))
+  nav_panel_hidden(value = "InfoSubEntry", 
+                   uiOutput(outputId = "DetailsPageSubEntry")),
+  nav_spacer() #,
+  # nav_menu(title = "Links",
+  #          align = "left",
+  #          nav_item(link_kahler_github),
+  #          nav_item(link_enggano_web),
+  #          nav_item(link_contemporary_enggano),
+  #          nav_item(link_kahler),
+  #          nav_item(link_enolex))
 )
 
 # SERVER: Define server logic required =====
@@ -387,8 +393,24 @@ server <- function(input, output, session) {
                   filterPlaceholder = "Search"
                 ),
                 defaultPageSize = 10,
+                onClick = JS(
+                  "function(rowInfo, column) {
+                           if(column.id === \"details\")
+                           Shiny.setInputValue('sub_entry_details', { index: rowInfo.index + 1 }, { priority: 'event' })
+                           }
+                           "
+                ),
                 elementId = "alphabet-select", # comment this to suppress warning
                 columns = list(
+                  
+                  details = colDef(
+                    name = "",
+                    sortable = FALSE,
+                    cell = function() htmltools::tags$button("more", class="btn btn-primary btn-sm rounded toggle"),
+                    filterable = FALSE,
+                    maxWidth = 83
+                  ),
+                  
                   entry = colDef(show = TRUE, 
                                  maxWidth = 80,
                                  filterInput = function(values, name) {
@@ -454,6 +476,10 @@ server <- function(input, output, session) {
     updateTabsetPanel(session = session, "tabs", "Main entry")
   })
   
+  observeEvent(input$BackToSub, {
+    updateTabsetPanel(session = session, "tabs", "Sub-entry")
+  })
+  
   # the following code check if a given nav_panel is selected, then rendered the table
   # observe({
   #   if (req(input$tabs) == "Main entry")
@@ -510,8 +536,8 @@ server <- function(input, output, session) {
     # remarks info
     stem_remark <- k_stem_filtered |> 
       filter(!is.na(stem_remark_DE)) |> 
-      mutate(myremarks = str_c("<li><sub><i>DE</i></sub> ", stem_remark_DE, "</li><li><sub><i>EN</i></sub> ", 
-                               stem_remark_EN, "</li><li><sub><i>ID</i></sub> ", 
+      mutate(myremarks = str_c("<li style='margin-left: 20px;'><sub><i>DE</i></sub> ", stem_remark_DE, "</li><li style='margin-left: 20px;'><sub><i>EN</i></sub> ", 
+                               stem_remark_EN, "</li><li style='margin-left: 20px;'><sub><i>ID</i></sub> ", 
                                stem_remark_IDN, "</li>", sep = "")) |> 
       pull(myremarks)
     
@@ -522,27 +548,27 @@ server <- function(input, output, session) {
         card_body(
           fillable = FALSE,
           tags$h2(HTML(main_entry_form)),
-          tags$p(HTML("<li>"), k_stem_interim$German[row_num], HTML("<sub><i>DE</i></sub></li><li>"), k_stem_interim$English[row_num], HTML("<sub><i>EN</i></sub></li><li>"), k_stem_interim$Indonesian[row_num], HTML("<sub><i>ID</i></sub></li>")),
+          tags$p(HTML("<li style='margin-left: 20px;'>"), k_stem_interim$German[row_num], HTML("<sub><i>DE</i></sub></li><li style='margin-left: 20px;'>"), k_stem_interim$English[row_num], HTML("<sub><i>EN</i></sub></li><li style='margin-left: 20px;'>"), k_stem_interim$Indonesian[row_num], HTML("<sub><i>ID</i></sub></li>")),
           if (any(!is.na(variant_forms))) {
-            div(p(HTML("<b>variant form(s)</b>:</br><li>", variant_forms, "</li></br>")))
+            div(p(HTML("<b>variant form(s)</b>:</br><li style='margin-left: 20px;'>", variant_forms, "</li></br>")))
           },
           if (any(!is.na(dialect_forms))) {
-            div(p(HTML("<b>variant form(s) marked with <em>DIA</em>(lectal) in the source</b>:</br><li>", dialect_forms, "</li></br>")))
+            div(p(HTML("<b>variant form(s) marked with <em>DIA</em>(lectal) in the source</b>:</br><li style='margin-left: 20px;'>", dialect_forms, "</li></br>")))
           },
           if (any(!is.na(stem_etym_form)) | any(!is.na(stem_etym_lang))) {
-            div(p(HTML("<b>Reconstruction info</b>:<li>form: <em>", stem_etym_form, "</em></li><li>source language: ", stem_etym_lang, "</li></br>")))
+            div(p(HTML("<b>Reconstruction info</b>:<li style='margin-left: 20px;'>form: <em>", stem_etym_form, "</em></li><li style='margin-left: 20px;'>source language: ", stem_etym_lang, "</li></br>")))
             
           },
           # if (any(!is.na(stem_etym_form)) | any(!is.na(stem_etym_lang))) {
-          #   div(p(HTML("<b>List of the etymological source language abreviation</b>:"), HTML(str_c(str_c("<li>", stem_etym_lang_abbrev, "</li>", sep = ""), collapse = ""))))
+          #   div(p(HTML("<b>List of the etymological source language abreviation</b>:"), HTML(str_c(str_c("<li style='margin-left: 20px;'>", stem_etym_lang_abbrev, "</li>", sep = ""), collapse = ""))))
           # },
           if (any(!is.na(stem_loan_form))) {
             if (length(stem_loan_form) == 1) {
-              div(p(HTML("<b>Loanword info (marked with   ̊    in the dictionary)</b>:<li>form: <em>", stem_loan_form, "</em></li><li>source language: ", stem_loan_lang, "</li></br>") ))
+              div(p(HTML("<b>Loanword info (marked with   ̊    in the dictionary)</b>:<li style='margin-left: 20px;'>form: <em>", stem_loan_form, "</em></li><li style='margin-left: 20px;'>source language: ", stem_loan_lang, "</li></br>") ))
             } else {
               stem_loan_form <- str_c(stem_loan_form, collapse = "; ")
               stem_loan_lang <- str_c(stem_loan_lang, collapse = "; ")
-              div(p(HTML("<b>Loanword info (marked with   ̊    in the dictionary)</b>:<li>form: <em>", stem_loan_form, "</em></li><li>source language: ", stem_loan_lang, "</li></br>") ))
+              div(p(HTML("<b>Loanword info (marked with   ̊    in the dictionary)</b>:<li style='margin-left: 20px;'>form: <em>", stem_loan_form, "</em></li><li style='margin-left: 20px;'>source language: ", stem_loan_lang, "</li></br>") ))
             }
           },
           if (any(!is.na(stem_remark))) {
@@ -560,7 +586,7 @@ server <- function(input, output, session) {
           actionButton("BackToMain", "Back", class = "btn-primary btn-lg rounded", style = "font-size: 75%"))
         ,
         card_footer(
-          HTML('<p style="font-size:12px" xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/"><a property="dct:title" rel="cc:attributionURL" href="https://doi.org/10.25446/oxford.28532666">The Enggano-German Dictionary online derived from Kähler’s (1987) “Enggano-Deutsches Wörterbuch”</a> by <span property="cc:attributionName">Rajeg et al. (2025)</span> is licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International</a><a><img style="height:15px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""><img style="height:15px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""><img style="height:15px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1" alt=""><img style="height:15px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1" alt=""></a></p>')
+          HTML('<p style="font-size:12px" xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/"><a property="dct:title" rel="cc:attributionURL" href="https://doi.org/10.25446/oxford.28532666" target="_blank">The Enggano-German Dictionary online derived from Kähler’s (1987) “Enggano-Deutsches Wörterbuch”</a> by <span property="cc:attributionName">Rajeg et al. (2025)</span> is licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International</a><a><img style="height:15px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""><img style="height:15px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""><img style="height:15px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1" alt=""><img style="height:15px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1" alt=""></a></p>')
         )
       )
             
@@ -610,6 +636,186 @@ server <- function(input, output, session) {
     # 
     #   )
     # )
+  })
+  
+  
+  observeEvent(input$sub_entry_details, {
+    
+    row_num <- as.numeric(input$sub_entry_details$index)
+    
+    main_entry_id <- k_subentry_interim$stem_id[row_num]
+    sub_example_id <- k_subentry_interim$example_id[row_num]
+    sub_example_form <- k_subentry_interim$form[row_num]
+    main_entry_form <- k_subentry_interim$`main entry`[row_num]
+    main_entry_homonym_id <- k_subentry_interim$stem_homonymID[row_num]
+    main_entry_form <- if_else(is.na(main_entry_homonym_id), 
+                               main_entry_form,
+                               str_c(main_entry_form, "<sup>", main_entry_homonym_id, "</sup>", sep = ""))
+    k_filtered <- filter(k_subentry,
+                         example_id == sub_example_id) |> 
+      distinct()
+    
+    # page number
+    pagenum <- pull(k_filtered, kms_page)
+    
+    # variant forms
+    var_id <- k_filtered |> 
+      filter(is.na(example_dialect_variant)) |> 
+      collect()
+    if (nrow(var_id) == 0) {
+      variant_forms <- NA
+    } else {
+      variant_forms <- pull(var_id, example_variant)
+    }
+    
+    # dialect variants
+    dialect_forms <- pull(filter(k_filtered, !is.na(example_dialect_variant)), 
+                          example_dialect_variant)
+    if (length(dialect_forms) == 0) {
+      dialect_forms <- NA
+    } else {
+      dialect_forms <- dialect_forms
+    }
+    
+    # etymological information
+    example_etym_form <- pull(filter(k_filtered, 
+                                     !is.na(example_etymological_form)), 
+                              example_etymological_form)
+    if (length(example_etym_form) == 0) {
+      example_etym_form <- NA
+    } else {
+      example_etym_form <- example_etym_form
+    }
+    example_etym_lang <- pull(filter(k_filtered, 
+                                     !is.na(example_etymological_language_donor)), 
+                              example_etymological_language_donor)
+    if (length(example_etym_lang) == 0) {
+      example_etym_lang <- NA
+    } else {
+      example_etym_lang <- example_etym_lang
+    }
+    if (!is.na(example_etym_lang) & str_detect(example_etym_lang, "^[0-9]+$") == TRUE) {
+      example_etym_lang <- as.double(example_etym_lang)
+      example_etym_lang <- lang_df$sw_name[lang_df$sw_id %in% example_etym_lang]
+    } else {
+      example_etym_lang <- example_etym_lang
+    }
+    example_etym_lang_abbrev <- pull(filter(k_stem, 
+                                            !is.na(stem_etymological_language_donor), 
+                                            !stem_etymological_language_donor %in% c("PAN", "SMtw")), 
+                                     stem_etymological_language_donor) |> 
+      unique()
+    example_etym_lang_abbrev <- sort(c(example_etym_lang_abbrev, 
+                                       "Sim (Simalur)", 
+                                       "Bugi (Buginesisch)", 
+                                       "Si(ch) (Sichule)"))
+    
+    # loanword information
+    example_loan_form <- pull(filter(k_filtered, 
+                                     !is.na(example_loanword_form)),
+                           example_loanword_form)
+    if (length(example_loan_form) == 0) {
+      example_loan_form <- NA
+    } else {
+      example_loan_form <- example_loan_form
+    }
+    example_loan_lang <- pull(filter(k_filtered, 
+                                     !is.na(example_loanword_language_donor)),
+                           example_loanword_language_donor)
+    example_loan_lang <- if_else(is.na(example_loan_lang), "-", example_loan_lang)
+    
+    # remarks info
+    example_remark <- k_filtered |> 
+      filter(!is.na(ex_remark_DE)) |> 
+      mutate(myremarks = str_c("<li style='margin-left: 20px;'><sub><i>DE</i></sub> ", 
+                               ex_remark_DE, "</li><li style='margin-left: 20px;'><sub><i>EN</i></sub> ", 
+                               ex_remark_EN, "</li><li style='margin-left: 20px;'><sub><i>ID</i></sub> ", 
+                               ex_remark_IDN, "</li>", sep = "")) |> 
+      pull(myremarks)
+    if (length(example_remark) == 0) {
+      example_remark <- NA
+    } else {
+      example_remark <- example_remark
+    }
+    
+    details <- reactive({
+      card(
+        fill = FALSE,
+        id = "DetailsInfo",
+        card_body(
+          fillable = FALSE,
+          tags$h2(HTML(sub_example_form)),
+          tags$p(HTML("<li style='margin-left: 20px;'>"), 
+                 k_subentry_interim$`German (sub)`[row_num], 
+                 HTML("<sub><i>DE</i></sub></li><li style='margin-left: 20px;'>"), 
+                 k_subentry_interim$`English (sub)`[row_num], 
+                 HTML("<sub><i>EN</i></sub></li><li style='margin-left: 20px;'>"), 
+                 k_subentry_interim$`Indonesian (sub)`[row_num], 
+                 HTML("<sub><i>ID</i></sub></li>")),
+          if (any(!is.na(variant_forms))) {
+            div(p(HTML("<b>variant form(s)</b>:</br><li style='margin-left: 20px;'>", 
+                       variant_forms, "</li></br>")))
+          },
+          if (any(!is.na(dialect_forms))) {
+            div(p(HTML("<b>variant form(s) marked with <em>DIA</em>(lectal) in the source</b>:</br><li style='margin-left: 20px;'>", 
+                       dialect_forms, "</li></br>")))
+          },
+          if (any(!is.na(example_etym_form)) | any(!is.na(example_etym_lang))) {
+            div(p(HTML("<b>Reconstruction info</b>:<li style='margin-left: 20px;'>form: <em>", 
+                       example_etym_form, "</em></li><li style='margin-left: 20px;'>source language: ", 
+                       example_etym_lang, "</li></br>")))
+            
+          },
+          # if (any(!is.na(example_etym_form)) | any(!is.na(example_etym_lang))) {
+          #   div(p(HTML("<b>List of the etymological source language abreviation</b>:"), HTML(str_c(str_c("<li style='margin-left: 20px;'>", example_etym_lang_abbrev, "</li>", sep = ""), collapse = ""))))
+          # },
+          if (any(!is.na(example_loan_form))) {
+            if (length(example_loan_form) == 1) {
+              div(p(HTML("<b>Loanword info (marked with   ̊    in the dictionary)</b>:<li style='margin-left: 20px;'>form: <em>",
+                         example_loan_form, 
+                         "</em></li><li style='margin-left: 20px;'>source language: ", 
+                         example_loan_lang, "</li></br>") ))
+            } else {
+              example_loan_form <- str_c(example_loan_form, collapse = "; ")
+              example_loan_lang <- str_c(example_loan_lang, collapse = "; ")
+              div(p(HTML("<b>Loanword info (marked with   ̊    in the dictionary)</b>:<li style='margin-left: 20px;'>form: <em>",
+                         example_loan_form, "</em></li><li style='margin-left: 20px;'>source language: ", 
+                         example_loan_lang, "</li></br>") ))
+            }
+          },
+          if (any(!is.na(example_remark) | length(example_remark) != 0)) {
+            div(p(HTML("<b>Notes/remarks</b>:", example_remark)))
+          },
+          if (length(pagenum) == 1) {
+            
+            tags$p(HTML("</br>Kähler (1987:", pagenum, ")</br>"))
+            
+          } else {
+            
+            tags$p(HTML("</br>Kähler (1987:",
+                        str_c(unique(pagenum), collapse = ", "), 
+                        ")</br>"))
+            
+          },
+          actionButton("BackToSub", 
+                       "Back", 
+                       class = "btn-primary btn-lg rounded", 
+                       style = "font-size: 75%"))
+        ,
+        card_footer(
+          HTML('<p style="font-size:12px" xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/"><a property="dct:title" rel="cc:attributionURL" href="https://doi.org/10.25446/oxford.28532666" target="_blank">The Enggano-German Dictionary online derived from Kähler’s (1987) “Enggano-Deutsches Wörterbuch”</a> by <span property="cc:attributionName">Rajeg et al. (2025)</span> is licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International</a><a><img style="height:15px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""><img style="height:15px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""><img style="height:15px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1" alt=""><img style="height:15px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1" alt=""></a></p>')
+        )
+      )
+      
+    })
+    
+    #if (!is.null(input$main_entry_details$index)) {
+    
+    observe(nav_show("tabs", "InfoSubEntry", select = TRUE, session = session))
+    # nav_insert("tabs", target = "Links", position = "before", select = TRUE, session = session)
+    # observe(nav_select("tabs", selected = "Info", session = session))
+    output$DetailsPageSubEntry <- renderUI(details())
+    
   })
   
 }
