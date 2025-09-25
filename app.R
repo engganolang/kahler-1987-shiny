@@ -17,6 +17,7 @@ library(bslib)
 library(RSQLite)
 library(reactable)
 library(htmltools)
+library(stringi)
 # renv::install("reactable")
 # renv::install("RSQLite")
 # renv::install("tippy")
@@ -51,7 +52,7 @@ k_stem_interim <- k_stem |>
     details = NA) |> 
   relocate(details, .before = form) |> 
   distinct() |> 
-  filter(!is.na(German)) |>
+  # filter(!is.na(German)) |>
   # select(-stem_homonymID) |> 
   collect() |> 
   mutate(across(where(is.character), ~replace_na(., "")))
@@ -313,6 +314,9 @@ server <- function(input, output, session) {
     
     k_stem_interim |> 
       
+      mutate(form = stringi::stri_trans_nfd(form),
+             German = stringi::stri_trans_nfd(German)) |> 
+      
       reactable(filterable = TRUE,
                 searchable = TRUE,
                 searchMethod = regex_search_method,
@@ -380,6 +384,10 @@ server <- function(input, output, session) {
   k_subentry_out <- reactive({
     
     k_subentry_interim |> 
+      
+      mutate(form = stringi::stri_trans_nfd(form),
+             `German (sub)` = stringi::stri_trans_nfd(`German (sub)`),
+             `main entry` = stringi::stri_trans_nfd(`main entry`)) |> 
       
       reactable(filterable = TRUE,
                 searchable = TRUE,
@@ -506,6 +514,11 @@ server <- function(input, output, session) {
     k_stem_filtered <- filter(k_stem, stem_id == main_entry_id) |> 
       distinct()
     
+    # check entries with NO GERMAN (AND BY EXTENSION OTHER GLOSSES)
+    no_gloss <- all(is.na(pull(k_stem_filtered, stem_DE)), 
+                    is.na(pull(k_stem_filtered, stem_EN)), 
+                    is.na(pull(k_stem_filtered, stem_IDN)))
+    
     # page number
     pagenum <- pull(k_stem_filtered, kms_page)
     entrynum <- pull(k_stem_filtered, kms_entry_no)
@@ -548,7 +561,29 @@ server <- function(input, output, session) {
         card_body(
           fillable = FALSE,
           tags$h2(HTML(main_entry_form)),
-          tags$p(HTML("<li style='margin-left: 20px;'>"), k_stem_interim$German[row_num], HTML("<sub><i>DE</i></sub></li><li style='margin-left: 20px;'>"), k_stem_interim$English[row_num], HTML("<sub><i>EN</i></sub></li><li style='margin-left: 20px;'>"), k_stem_interim$Indonesian[row_num], HTML("<sub><i>ID</i></sub></li>")),
+          
+          if (no_gloss) {
+            
+            ex_form <- pull(filter(k_subentry_interim, stem_id == main_entry_id), form)
+            ex_german <- pull(filter(k_subentry_interim, stem_id == main_entry_id), `German (sub)`)
+            ex_english <- pull(filter(k_subentry_interim, stem_id == main_entry_id), `English (sub)`)
+            ex_idn <- pull(filter(k_subentry_interim, stem_id == main_entry_id), `Indonesian (sub)`)
+            
+            ex_alls <- # paste(
+              paste(ex_form, "<li style='margin-left: 20px;'>", 
+                    ex_german, "<sub><i>DE</i></sub></li><li style='margin-left: 20px;'>", 
+                    ex_english, "<sub><i>EN</i></sub></li><li style='margin-left: 20px;'>", 
+                    ex_idn, "<sub><i>ID</i></sub></li></br>", sep = "")#, 
+            #collapse = "")
+            
+            tags$p(HTML("This headword/entry has no German gloss in the original dictionary.</br><h5>sub-entry/usage example</h5></bɾ></bɾ>"), HTML(ex_alls))
+            
+          } else {
+            
+            tags$p(HTML("<li style='margin-left: 20px;'>"), k_stem_interim$German[row_num], HTML("<sub><i>DE</i></sub></li><li style='margin-left: 20px;'>"), k_stem_interim$English[row_num], HTML("<sub><i>EN</i></sub></li><li style='margin-left: 20px;'>"), k_stem_interim$Indonesian[row_num], HTML("<sub><i>ID</i></sub></li>"))  
+            
+          },
+          
           if (any(!is.na(variant_forms))) {
             div(p(HTML("<b>variant form(s)</b>:</br><li style='margin-left: 20px;'>", variant_forms, "</li></br>")))
           },
